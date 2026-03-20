@@ -1,0 +1,126 @@
+@charset "UTF-8";
+/*국룰 세팅*/
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: lightgray;
+}
+
+/* 전체 페이지 스타일 */
+.page {
+  /* 높이와 너비 설정은 초기에 auto
+  div 나 main 은 block 이기 때문에
+  너비는 반응형 고려해서 %사용
+  높이는 내용물이 뭉개질 수 있어서 최소 높이를 100vh 사용을 권장 */
+  width: 100%;
+  max-width: 1200px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 헤더 스타일 */
+.header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 120px;
+  /* box-sizing:  부모 너비 - 부모 패딩 */
+  width: 100%;
+}
+.header__title {
+  font-size: 30px;
+  font-weight: bold;
+}
+
+/* main */
+.content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  max-width: 1200px;
+  align-items: center;
+  border-top: 2px solid #555;
+}
+
+/* main 안에 테스크보드 */
+.task-board {
+  display: flex;
+  width: 70%;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+}
+.task-board__input {
+  width: 100%;
+  padding: 10px;
+  margin: 20px;
+}
+.task-board__list {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  list-style: none;
+  justify-content: space-between;
+  gap: 0px;
+}
+
+/* 태스크보드 리스트 안에 투두리스트 */
+.todo-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+}
+.todo-list__title {
+  font-size: 18px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid #555;
+}
+.todo-list__ul {
+  width: 100%;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+.todo-list__li {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 10px;
+  font-size: 20px;
+  color: #000;
+}
+.todo-list {
+  /* 오른쪽에 들어갈 완료 버튼용 스타일 */
+}
+.todo-list__btn {
+  background-color: #dce5f0;
+  border: none;
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #000;
+  cursor: pointer;
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80px;
+  width: 100%;
+  margin-top: auto;
+  /* flex container 안에서 맨 아래로 밀어내줌 */
+  color: #666;
+  font-size: 14px;
+  border-top: 1px solid #ccc;
+}
+
+/*# sourceMappingURL=style.css.map */
