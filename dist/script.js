@@ -11,8 +11,14 @@ function addTodo(text) {
     todos.push(newTodo);
     updateView();
 }
-function toggleTodo(id) {
-    todos = todos.map(todo => todo.id === id ? Object.assign(Object.assign({}, todo), { isCompleted: !todo.isCompleted }) : todo);
+function doneTodo(id) {
+    const index = todos.findIndex(todo => todo.id === id);
+    if (index !== -1) {
+        const targetTodo = todos[index];
+        todos.splice(index, 1);
+        targetTodo.isCompleted = true;
+        todos.push(targetTodo);
+    }
     updateView();
 }
 function deleteTodo(id) {
@@ -20,10 +26,9 @@ function deleteTodo(id) {
     updateView();
 }
 function updateView() {
-    renderTodos(todos, toggleTodo, deleteTodo);
+    renderTodos(todos, doneTodo, deleteTodo);
 }
-function init() {
+document.addEventListener('DOMContentLoaded', () => {
     setupInput(addTodo);
     updateView();
-}
-document.addEventListener('DOMContentLoaded', init);
+});

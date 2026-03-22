@@ -25,7 +25,7 @@ function createTodoElement(todo, onDone, onDelete) {
     button.className = "todos__btn";
     if (!todo.isCompleted) {
         button.textContent = "완료";
-        button.style.backgroundColor = "#31975e";
+        button.style.backgroundColor = "green";
         button.style.color = "white";
         button.addEventListener("click", () => {
             onDone(todo.id);
@@ -33,7 +33,7 @@ function createTodoElement(todo, onDone, onDelete) {
     }
     else {
         button.textContent = "삭제";
-        button.style.backgroundColor = "#c94c5b";
+        button.style.backgroundColor = "red";
         button.style.color = "white";
         button.addEventListener("click", () => {
             onDelete(todo.id);
