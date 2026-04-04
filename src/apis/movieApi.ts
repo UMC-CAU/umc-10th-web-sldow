@@ -23,3 +23,21 @@ export const getPopularMovies = async (page = 1): Promise<MovieResponse> => {
     `/movie/popular?language=ko-KR&page=${page}`,
   );
 };
+
+export const getNowPlayingMovies = async (page = 1): Promise<MovieResponse> => {
+  return await movieRequest<MovieResponse>(
+    `/movie/now_playing?language=ko-KR&page=${page}`,
+  );
+};
+
+export const getTopRatedMovies = async (page = 1): Promise<MovieResponse> => {
+  return await movieRequest<MovieResponse>(
+    `/movie/top_rated?language=ko-KR&page=${page}`,
+  );
+};
+
+export const getUpcomingMovies = async (page = 1): Promise<MovieResponse> => {
+  return await movieRequest<MovieResponse>(
+    `/movie/upcoming?language=ko-KR&page=${page}`,
+  );
+};
