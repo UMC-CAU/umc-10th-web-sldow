@@ -1,4 +1,6 @@
 import type { MovieResponse } from "../types/movie";
+import type { Detail } from "../types/detail";
+import type { Credits } from "../types/credit";
 
 const movieRequest = async <T>(endpoint: string): Promise<T> => {
   const response = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
@@ -40,4 +42,12 @@ export const getUpcomingMovies = async (page = 1): Promise<MovieResponse> => {
   return await movieRequest<MovieResponse>(
     `/movie/upcoming?language=ko-KR&page=${page}`,
   );
+};
+
+export const getMovieDetails = async (movieId: string): Promise<Detail> => {
+  return await movieRequest<Detail>(`/movie/${movieId}?language=ko-KR`);
+};
+
+export const getMovieCredits = async (movieId: string): Promise<Credits> => {
+  return await movieRequest<Credits>(`/movie/${movieId}/credits?language=ko-KR`);
 };
