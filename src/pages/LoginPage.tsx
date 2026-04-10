@@ -2,7 +2,9 @@ import { GoogleLoginButton } from "../components/GoogleLoginButton";
 import { BackButton } from "../components/BackButton";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { z } from "zod";
+import { useAuth } from "../hooks/useAuth";
 
 const loginSchema = z.object({
   email: z.email("유효하지 않은 이메일 형식입니다."),
@@ -12,6 +14,9 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
+  const navigate = useNavigate();
+  const { setAuthData } = useAuth();
+
   const {
     register,
     handleSubmit,
@@ -22,9 +27,37 @@ export function LoginPage() {
     defaultValues: { email: "", password: "" },
   });
 
-  const onSubmit = (_data: LoginFormValues) => {
-    // 로그인 API 연동 시 여기서 처리
-    console.log("로그인 완료!");
+  const onSubmit = async (data: LoginFormValues) => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/v1/auth/signin`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: data.email,
+            password: data.password,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "로그인에 실패했습니다.");
+      }
+
+      const result = await response.json();
+      console.log("로그인 정보:", result.data);
+      setAuthData(result.data);
+      navigate("/");
+    } catch (error) {
+      console.error("로그인 오류:", error);
+      alert(
+        error instanceof Error ? error.message : "로그인에 실패했습니다."
+      );
+    }
   };
 
   return (

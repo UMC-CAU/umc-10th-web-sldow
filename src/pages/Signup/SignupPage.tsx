@@ -41,8 +41,38 @@ export function SignupPage() {
     },
   });
 
-  const onComplete = (_data: SignupFormValues) => {
-    console.log("회원가입 폼 검증 완료");
+  //로컬서버로 요청 보내는 회원가입 로직
+  const onComplete = async (data: SignupFormValues) => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/v1/auth/signup`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: data.email,
+            password: data.password,
+            name: data.nickname,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "회원가입에 실패했습니다.");
+      }
+
+      const signupData = await response.json();
+      console.log("회원가입 정보:", signupData);
+      navigate("/login");
+    } catch (error) {
+      console.error("회원가입 오류:", error);
+      alert(
+        error instanceof Error ? error.message : "회원가입에 실패했습니다."
+      );
+    }
   };
 
   const goNext = async () => {
