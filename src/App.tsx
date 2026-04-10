@@ -4,7 +4,7 @@ import { HomePage } from "./pages/HomePage";
 import { MoviesPage } from "./pages/MoviesPage";
 import { MovieDetailPage } from "./pages/MovieDetailPage";
 import { LoginPage } from "./pages/LoginPage";
-import { SignupPage } from "./pages/SignupPage";
+import { SignupPage } from "./pages/Signup";
 
 const router = createBrowserRouter([
   {

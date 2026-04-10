@@ -1,35 +1,64 @@
 import { GoogleLoginButton } from "../components/GoogleLoginButton";
 import { BackButton } from "../components/BackButton";
-import { useMemo, useState } from "react";
-import { useForm } from "../hooks/useForm";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+import { z } from "zod";
+import { useAuth } from "../hooks/useAuth";
 
-const isValidEmail = (email: string) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const loginSchema = z.object({
+  email: z.email("유효하지 않은 이메일 형식입니다."),
+  password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다."),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
-  const [touchedEmail, setTouchedEmail] = useState(false);
-  const [touchedPassword, setTouchedPassword] = useState(false);
+  const navigate = useNavigate();
+  const { setAuthData } = useAuth();
 
-  const emailForm = useForm({
-    isValid: (email) => email.length > 0 && isValidEmail(email),
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    mode: "onChange",
+    defaultValues: { email: "", password: "" },
   });
-  const passwordForm = useForm({
-    isValid: (pw) => pw.length >= 6,
-  });
 
-  const emailError = useMemo(() => {
-    if (!touchedEmail) return null;
-    return isValidEmail(emailForm.form) ? null : "유효하지 않은 이메일 형식입니다.";
-  }, [emailForm.form, touchedEmail]);
+  const onSubmit = async (data: LoginFormValues) => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/v1/auth/signin`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: data.email,
+            password: data.password,
+          }),
+        }
+      );
 
-  const passwordError = useMemo(() => {
-    if (!touchedPassword) return null;
-    return passwordForm.form.length >= 6
-      ? null
-      : "비밀번호는 최소 6자 이상이어야 합니다.";
-  }, [passwordForm.form, touchedPassword]);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "로그인에 실패했습니다.");
+      }
 
-  const canSubmit = emailForm.canSubmit && passwordForm.canSubmit;
+      const result = await response.json();
+      console.log("로그인 정보:", result.data);
+      setAuthData(result.data);
+      navigate("/");
+    } catch (error) {
+      console.error("로그인 오류:", error);
+      alert(
+        error instanceof Error ? error.message : "로그인에 실패했습니다."
+      );
+    }
+  };
 
   return (
     <main className="relative flex flex-1 items-center justify-center bg-white px-4 text-neutral-900">
@@ -53,54 +82,45 @@ export function LoginPage() {
             <div className="h-px flex-1 bg-neutral-200" />
           </div>
 
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setTouchedEmail(true);
-              setTouchedPassword(true);
-              if (!canSubmit) return;
-            }}
-          >
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
             <div className="space-y-2">
               <input
                 type="email"
-                value={emailForm.form}
-                onChange={(e) => emailForm.setForm(e.target.value)}
-                onBlur={() => setTouchedEmail(true)}
+                autoComplete="email"
                 placeholder="이메일을 입력해주세요!"
                 className="w-full rounded-md border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none focus:border-neutral-400"
+                {...register("email")}
               />
-              {emailError && (
-                <p className="text-xs font-medium text-red-500">{emailError}</p>
+              {errors.email && (
+                <p className="text-xs font-medium text-red-500" role="alert">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
             <div className="space-y-2">
               <input
                 type="password"
-                value={passwordForm.form}
-                onChange={(e) => passwordForm.setForm(e.target.value)}
-                onBlur={() => setTouchedPassword(true)}
+                autoComplete="current-password"
                 placeholder="비밀번호를 입력해주세요!"
                 className="w-full rounded-md border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none focus:border-neutral-400"
+                {...register("password")}
               />
-              {passwordError && (
-                <p className="text-xs font-medium text-red-500">
-                  {passwordError}
+              {errors.password && (
+                <p className="text-xs font-medium text-red-500" role="alert">
+                  {errors.password.message}
                 </p>
               )}
             </div>
 
             <button
               type="submit"
-              disabled={!canSubmit}
-              aria-disabled={!canSubmit}
-              className={`w-full rounded-md px-4 py-3 text-sm font-semibold text-white shadow-sm ${
-                canSubmit
+              disabled={!isValid}
+              aria-disabled={!isValid}
+              className={`w-full rounded-md px-4 py-3 text-sm font-semibold text-white shadow-sm ${isValid
                   ? "bg-emerald-500 hover:bg-emerald-600"
                   : "cursor-not-allowed bg-neutral-300 text-white/80"
-              }`}
+                }`}
             >
               로그인
             </button>
