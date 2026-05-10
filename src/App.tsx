@@ -1,8 +1,6 @@
 import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import { Layout } from "./layout/Layout";
 import { HomePage } from "./pages/HomePage";
-import { MoviesPage } from "./pages/MoviesPage";
-import { MovieDetailPage } from "./pages/MovieDetailPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/Signup";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -13,10 +11,6 @@ const router = createBrowserRouter([
     path: "/",
     element: <Layout />,
     children: [
-      {
-        index: true,
-        element: <HomePage />,
-      },
       {
         path: "login",
         element: <LoginPage />,
@@ -33,24 +27,8 @@ const router = createBrowserRouter([
         element: <ProtectedRoute />,
         children: [
           {
-            path: "popular",
-            element: <MoviesPage category="popular" />,
-          },
-          {
-            path: "now-playing",
-            element: <MoviesPage category="now_playing" />,
-          },
-          {
-            path: "top-rated",
-            element: <MoviesPage category="top_rated" />,
-          },
-          {
-            path: "upcoming",
-            element: <MoviesPage category="upcoming" />,
-          },
-          {
-            path: "movies/:movieId",
-            element: <MovieDetailPage />,
+            index: true,
+            element: <HomePage />,
           },
         ],
       },

@@ -9,7 +9,7 @@ export function GoogleLoginButton() {
     <button
       type="button"
       onClick={handleGoogleLogin}
-      className="relative w-full rounded-md border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-900 hover:bg-neutral-50"
+      className="relative w-full rounded-md border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm font-medium text-white hover:bg-neutral-800"
     >
       <img
         src={googleLogo}

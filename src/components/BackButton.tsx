@@ -16,7 +16,7 @@ export function BackButton({ onClick }: BackButtonProps) {
     });
 
   return (
-    <button type="button" onClick={handleClick}>
+    <button type="button" onClick={handleClick} className="text-pink-400 hover:text-pink-300">
       <span>&lt;</span>
     </button>
   );

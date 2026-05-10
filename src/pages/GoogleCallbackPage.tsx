@@ -20,14 +20,17 @@ export function GoogleCallbackPage() {
         accessToken,
         refreshToken,
       });
-      navigate('/');
+      // 상태 업데이트 후 페이지 리로드
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 0);
     } else {
       navigate('/login');
     }
-  }, []);
+  }, [searchParams, navigate, setAuthData]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex items-center justify-center min-h-screen bg-black text-white">
       <p>로그인 처리 중...</p>
     </div>
   );

@@ -35,9 +35,9 @@ export function ProfileImageSelector({ onFileSelect }: ProfileImageSelectorProps
 
   return (
     <div className="flex flex-col items-center justify-center">
-      <div 
+      <div
         onClick={triggerFileInput}
-        className="group relative h-32 w-32 cursor-pointer overflow-hidden rounded-full bg-neutral-200 transition-all hover:bg-neutral-300 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-offset-2"
+        className="group relative h-32 w-32 cursor-pointer overflow-hidden rounded-full bg-neutral-800 transition-all hover:bg-neutral-700 focus-within:ring-2 focus-within:ring-pink-500 focus-within:ring-offset-2 focus-within:ring-offset-black"
         role="button"
         aria-label="프로필 사진 선택"
         tabIndex={0}
@@ -80,7 +80,7 @@ export function ProfileImageSelector({ onFileSelect }: ProfileImageSelectorProps
         aria-hidden="true"
       />
       
-      <p className="mt-2 text-xs text-neutral-500">
+      <p className="mt-2 text-xs text-neutral-400">
         프로필 사진을 클릭하여 변경하세요
       </p>
     </div>

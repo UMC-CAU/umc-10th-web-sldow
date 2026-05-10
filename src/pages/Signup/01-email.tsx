@@ -7,11 +7,11 @@ export function Step01Email({ register, errors }: SignupStepProps) {
         type="email"
         autoComplete="email"
         placeholder="이메일을 입력해주세요!"
-        className="w-full rounded-md border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none focus:border-neutral-400"
+        className="w-full rounded-md border border-pink-500 bg-neutral-900 px-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none focus:border-pink-400"
         {...register("email")}
       />
       {errors.email && (
-        <p className="text-xs font-medium text-red-500" role="alert">
+        <p className="text-xs font-medium text-pink-400" role="alert">
           {errors.email.message}
         </p>
       )}
