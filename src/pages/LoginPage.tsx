@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { GoogleLoginButton } from "../components/GoogleLoginButton";
 import { BackButton } from "../components/BackButton";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +16,14 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { setAuthData } = useAuth();
+  const { setAuthData, isLoggedIn } = useAuth();
+
+  // 로그인 상태면 홈으로 리다이렉트
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate('/');
+    }
+  }, [isLoggedIn, navigate]);
 
   const {
     register,
@@ -51,7 +59,14 @@ export function LoginPage() {
       const result = await response.json();
       console.log("로그인 정보:", result.data);
       setAuthData(result.data);
-      navigate("/");
+
+      // 원래 가려던 페이지로 복귀, 없으면 홈으로
+      const redirectTo = sessionStorage.getItem("redirectTo") || "/";
+      sessionStorage.removeItem("redirectTo");
+
+      setTimeout(() => {
+        window.location.href = redirectTo;
+      }, 0);
     } catch (error) {
       console.error("로그인 오류:", error);
       alert(
@@ -61,12 +76,12 @@ export function LoginPage() {
   };
 
   return (
-    <main className="relative flex flex-1 items-center justify-center bg-white px-4 text-neutral-900">
+    <main className="relative flex flex-1 items-center justify-center bg-black px-4 text-white">
       <div className="w-full max-w-md">
         <section className="w-full">
           <header className="mb-8 grid grid-cols-[36px_1fr_36px] items-center">
             <BackButton />
-            <h1 className="text-center text-2xl font-semibold tracking-tight">
+            <h1 className="text-center text-2xl font-semibold tracking-tight text-pink-400">
               로그인
             </h1>
             <div aria-hidden className="h-9 w-9" />
@@ -75,11 +90,11 @@ export function LoginPage() {
           <GoogleLoginButton />
 
           <div className="my-6 flex items-center gap-4">
-            <div className="h-px flex-1 bg-neutral-200" />
-            <span className="text-xs font-semibold tracking-widest text-neutral-500">
+            <div className="h-px flex-1 bg-neutral-700" />
+            <span className="text-xs font-semibold tracking-widest text-neutral-400">
               OR
             </span>
-            <div className="h-px flex-1 bg-neutral-200" />
+            <div className="h-px flex-1 bg-neutral-700" />
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -88,11 +103,11 @@ export function LoginPage() {
                 type="email"
                 autoComplete="email"
                 placeholder="이메일을 입력해주세요!"
-                className="w-full rounded-md border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none focus:border-neutral-400"
+                className="w-full rounded-md border border-pink-500 bg-neutral-900 px-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none focus:border-pink-400"
                 {...register("email")}
               />
               {errors.email && (
-                <p className="text-xs font-medium text-red-500" role="alert">
+                <p className="text-xs font-medium text-pink-400" role="alert">
                   {errors.email.message}
                 </p>
               )}
@@ -103,11 +118,11 @@ export function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 placeholder="비밀번호를 입력해주세요!"
-                className="w-full rounded-md border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none focus:border-neutral-400"
+                className="w-full rounded-md border border-pink-500 bg-neutral-900 px-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none focus:border-pink-400"
                 {...register("password")}
               />
               {errors.password && (
-                <p className="text-xs font-medium text-red-500" role="alert">
+                <p className="text-xs font-medium text-pink-400" role="alert">
                   {errors.password.message}
                 </p>
               )}
@@ -118,8 +133,8 @@ export function LoginPage() {
               disabled={!isValid}
               aria-disabled={!isValid}
               className={`w-full rounded-md px-4 py-3 text-sm font-semibold text-white shadow-sm ${isValid
-                  ? "bg-emerald-500 hover:bg-emerald-600"
-                  : "cursor-not-allowed bg-neutral-300 text-white/80"
+                  ? "bg-pink-600 hover:bg-pink-700"
+                  : "cursor-not-allowed bg-neutral-700 text-white/80"
                 }`}
             >
               로그인

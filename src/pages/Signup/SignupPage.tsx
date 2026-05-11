@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import { Step01Email } from "./01-email";
 import { Step02Password } from "./02-password";
 import { Step03ProfileImage } from "./03-profile-image";
 import { createSignupSchema, type SignupFormValues } from "./signupSchema";
+import { useAuth } from "../../hooks/useAuth";
 
 const STEP_FIELDS: (keyof SignupFormValues)[][] = [
   ["email"],
@@ -19,7 +20,15 @@ const STEP_COUNT = STEP_FIELDS.length;
 
 export function SignupPage() {
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
   const [step, setStep] = useState(0);
+
+  // 로그인 상태면 홈으로 리다이렉트
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate('/');
+    }
+  }, [isLoggedIn, navigate]);
 
   const signupSchema = useMemo(() => createSignupSchema(step), [step]);
 
@@ -95,12 +104,12 @@ export function SignupPage() {
   };
 
   return (
-    <main className="relative flex flex-1 items-center justify-center bg-white px-4 text-neutral-900">
+    <main className="relative flex flex-1 items-center justify-center bg-black px-4 text-white">
       <div className="w-full max-w-md">
         <section className="w-full">
           <header className="mb-8 grid grid-cols-[36px_1fr_36px] items-center">
             <BackButton onClick={handleBack} />
-            <h1 className="text-center text-2xl font-semibold tracking-tight">
+            <h1 className="text-center text-2xl font-semibold tracking-tight text-pink-400">
               회원가입
             </h1>
             <div aria-hidden className="h-9 w-9" />
@@ -111,11 +120,11 @@ export function SignupPage() {
               <GoogleLoginButton />
 
               <div className="my-6 flex items-center gap-4">
-                <div className="h-px flex-1 bg-neutral-200" />
-                <span className="text-xs font-semibold tracking-widest text-neutral-500">
+                <div className="h-px flex-1 bg-neutral-700" />
+                <span className="text-xs font-semibold tracking-widest text-neutral-400">
                   OR
                 </span>
-                <div className="h-px flex-1 bg-neutral-200" />
+                <div className="h-px flex-1 bg-neutral-700" />
               </div>
             </>
           )}
@@ -140,7 +149,7 @@ export function SignupPage() {
 
             <button
               type="submit"
-              className="w-full rounded-md bg-emerald-500 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600"
+              className="w-full rounded-md bg-pink-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-pink-700"
             >
               다음
             </button>
