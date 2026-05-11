@@ -1,22 +1,51 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { GalleryGrid } from "../components/GalleryGrid";
 import { useLpsList } from "../hooks/useLpsList";
-import { LoadingSpinner, SkeletonGrid } from "../components/loading";
+import { SkeletonGrid } from "../components/loading";
 
 export function HomePage() {
   const [sort, setSort] = useState<"latest" | "oldest">("latest");
+  const observerTarget = useRef<HTMLDivElement>(null);
 
-  // useQuery로 lps 목록 조회
-  const { data: lpsData, isLoading, error, refetch } = useLpsList(sort);
+  // useInfiniteQuery로 lps 목록 조회
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useLpsList(sort);
 
   // API 데이터를 GalleryGrid 형식으로 변환
-  const galleryItems = (lpsData || []).map((item: any) => ({
-    id: item.id,
-    image: item.thumbnail || "",
-    title: item.title || item.name,
-    subtitle: item.subtitle || item.description,
-    likes: item.likes || [],
-  }));
+  const galleryItems = data?.pages.flatMap((page) =>
+    page.data.map((item: any) => ({
+      id: item.id,
+      image: item.thumbnail || "",
+      title: item.title || item.name,
+      subtitle: item.subtitle || item.description,
+      likes: item.likes || [],
+    }))
+  ) || [];
+
+  // Intersection Observer로 무한 스크롤 구현
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleGalleryItemClick = (item: any) => {
     console.log("클릭된 아이템:", item);
@@ -37,10 +66,10 @@ export function HomePage() {
         >
           {sort === "latest" ? "최신순" : "오래된순"}
         </button>
-        {isLoading && (
+        {(isLoading || isFetchingNextPage) && (
           <span className="text-neutral-400 text-sm flex items-center gap-2">
             <span className="inline-block w-2 h-2 bg-pink-500 rounded-full animate-pulse" />
-            갱신 중...
+            {isLoading ? "로딩 중..." : "추가 로딩 중..."}
           </span>
         )}
       </div>
@@ -59,7 +88,7 @@ export function HomePage() {
         </div>
       )}
 
-      {/* 로딩 상태 - 스켈레톤 그리드 */}
+      {/* 초기 로딩 - 스켈레톤 그리드 */}
       {isLoading && galleryItems.length === 0 && !error && (
         <div>
           <SkeletonGrid columns={5} count={10} />
@@ -67,12 +96,24 @@ export function HomePage() {
       )}
 
       {/* 갤러리 그리드 */}
-      {!isLoading && galleryItems.length > 0 && (
-        <GalleryGrid
-          items={galleryItems}
-          columns={5}
-          onItemClick={handleGalleryItemClick}
-        />
+      {galleryItems.length > 0 && (
+        <>
+          <GalleryGrid
+            items={galleryItems}
+            columns={5}
+            onItemClick={handleGalleryItemClick}
+          />
+
+          {/* 추가 로딩 - 하단 스켈레톤 */}
+          {isFetchingNextPage && (
+            <div className="mt-8">
+              <SkeletonGrid columns={5} count={5} />
+            </div>
+          )}
+
+          {/* 무한 스크롤 트리거 */}
+          <div ref={observerTarget} className="h-10 mt-8" />
+        </>
       )}
 
       {/* 데이터 없음 */}
