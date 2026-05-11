@@ -1,5 +1,10 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useState } from "react";
+
+interface NavbarProps {
+  onMenuClick?: () => void;
+}
 
 //NavLink의 active 스타일링 기능
 const navClass = ({ isActive }: { isActive: boolean }) =>
@@ -7,25 +12,48 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
     ? "text-pink-500 font-medium"
     : "text-neutral-500 transition-colors hover:text-neutral-400";
 
-export function Navbar() {
+export function Navbar({ onMenuClick }: NavbarProps) {
   const { authData, isLoggedIn, logout } = useAuth();
   const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  const handleMenuClick = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+    onMenuClick?.();
+  };
+
   return (
-    <nav className="bg-neutral-900 px-4 py-4">
-      <div className="mx-auto flex max-w-6xl items-center justify-between">
-        <ul className="flex flex-wrap gap-6 text-sm">
-          <li>
-            <NavLink to="/" end className={navClass}>
-              홈
-            </NavLink>
-          </li>
-        </ul>
+    <nav className="bg-neutral-900 sticky top-0 z-50">
+      <div className="flex items-center justify-between px-8 py-4">
+        {/* 버거 버튼 */}
+        <button
+          onClick={handleMenuClick}
+          className="p-2 hover:bg-neutral-800 rounded transition"
+          aria-label="메뉴"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 48 48"
+            xmlns="http://www.w3.org/2000/svg"
+            className="text-white"
+          >
+            <path
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="4"
+              d="M7.95 11.95h32m-32 12h32m-32 12h32"
+            />
+          </svg>
+        </button>
+
 
         <div className="flex items-center gap-4">
           {isLoggedIn && authData ? (

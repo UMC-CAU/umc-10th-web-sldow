@@ -1,52 +1,92 @@
-import { useEffect, useState } from 'react';
-import { getMyInfo } from '../apis/userApi';
+import { useState } from "react";
+import { GalleryGrid } from "../components/GalleryGrid";
+import { useLpsList } from "../hooks/useLpsList";
+import { LoadingSpinner, SkeletonGrid } from "../components/loading";
 
 export function HomePage() {
-  const [userInfo, setUserInfo] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [sort, setSort] = useState<"latest" | "oldest">("latest");
 
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const info = await getMyInfo();
-        setUserInfo(info);
-      } catch (err) {
-        console.error('사용자 정보 조회 실패:', err);
-        setError('사용자 정보를 불러올 수 없습니다.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // useQuery로 lps 목록 조회
+  const { data: lpsData, isLoading, error, refetch } = useLpsList(sort);
 
-    fetchUserInfo();
-  }, []);
+  // API 데이터를 GalleryGrid 형식으로 변환
+  const galleryItems = (lpsData || []).map((item: any) => ({
+    id: item.id,
+    image: item.thumbnail || "",
+    title: item.title || item.name,
+    subtitle: item.subtitle || item.description,
+    likes: item.likes || [],
+  }));
+
+  const handleGalleryItemClick = (item: any) => {
+    console.log("클릭된 아이템:", item);
+  };
+
+  const toggleSort = () => {
+    setSort(sort === "latest" ? "oldest" : "latest");
+  };
 
   return (
-    <div className="p-8 min-h-screen">
-      <h1 className="text-2xl font-semibold text-pink-400">홈</h1>
+    <div className="p-4 md:p-8 min-h-screen bg-black">
+      {/* 정렬 버튼 */}
+      <div className="mb-6 flex items-center gap-4">
+        <button
+          onClick={toggleSort}
+          disabled={isLoading}
+          className="px-4 py-2 rounded-full text-sm font-semibold bg-pink-600 text-white hover:bg-pink-700 disabled:opacity-50 transition"
+        >
+          {sort === "latest" ? "최신순" : "오래된순"}
+        </button>
+        {isLoading && (
+          <span className="text-neutral-400 text-sm flex items-center gap-2">
+            <span className="inline-block w-2 h-2 bg-pink-500 rounded-full animate-pulse" />
+            갱신 중...
+          </span>
+        )}
+      </div>
 
-      {loading && (
-        <p className="mt-4 text-neutral-400">로딩 중...</p>
-      )}
-
-      {!loading && error && (
-        <p className="mt-4 text-pink-400">{error}</p>
-      )}
-
-      {!loading && userInfo && (
-        <div>
-          <p className="mt-4 text-lg text-white">
-            반갑습니다, <span className="font-semibold text-pink-400">{userInfo.name}</span>님!
-          </p>
-          <p className="mt-2 text-neutral-400">
-            로그인이 완료되었습니다.
-          </p>
+      {/* 에러 상태 */}
+      {error && (
+        <div className="mb-8 p-4 bg-red-900/20 border border-red-500 rounded-lg">
+          <h3 className="text-red-400 font-semibold mb-2">오류 발생</h3>
+          <p className="text-red-300 text-sm mb-4">데이터를 불러올 수 없습니다.</p>
+          <button
+            onClick={() => refetch()}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm font-medium"
+          >
+            다시 시도
+          </button>
         </div>
       )}
 
-      {!loading && !userInfo && !error && (
-        <p className="mt-4 text-neutral-400">사용자 정보가 없습니다.</p>
+      {/* 로딩 상태 - 스켈레톤 그리드 */}
+      {isLoading && galleryItems.length === 0 && !error && (
+        <div>
+          <SkeletonGrid columns={5} count={10} />
+        </div>
+      )}
+
+      {/* 갤러리 그리드 */}
+      {!isLoading && galleryItems.length > 0 && (
+        <GalleryGrid
+          items={galleryItems}
+          columns={5}
+          onItemClick={handleGalleryItemClick}
+        />
+      )}
+
+      {/* 데이터 없음 */}
+      {!isLoading && galleryItems.length === 0 && !error && (
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="text-4xl mb-4">🎵</div>
+          <p className="text-neutral-400 text-lg">데이터가 없습니다.</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-4 px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-700 transition text-sm"
+          >
+            새로고침
+          </button>
+        </div>
       )}
     </div>
   );

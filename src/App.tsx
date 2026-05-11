@@ -5,6 +5,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/Signup";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { GoogleCallbackPage } from "./pages/GoogleCallbackPage";
+import { CreatePage } from "./pages/CreatePage";
+import { LpDetailPage } from "./pages/LpDetailPage";
 
 const router = createBrowserRouter([
   {
@@ -29,6 +31,14 @@ const router = createBrowserRouter([
           {
             index: true,
             element: <HomePage />,
+          },
+          {
+            path: "create",
+            element: <CreatePage />,
+          },
+          {
+            path: "lp/:lpid",
+            element: <LpDetailPage />,
           },
         ],
       },

@@ -59,9 +59,13 @@ export function LoginPage() {
       const result = await response.json();
       console.log("로그인 정보:", result.data);
       setAuthData(result.data);
-      // 상태 업데이트 후 페이지 리로드
+
+      // 원래 가려던 페이지로 복귀, 없으면 홈으로
+      const redirectTo = sessionStorage.getItem("redirectTo") || "/";
+      sessionStorage.removeItem("redirectTo");
+
       setTimeout(() => {
-        window.location.href = '/';
+        window.location.href = redirectTo;
       }, 0);
     } catch (error) {
       console.error("로그인 오류:", error);
