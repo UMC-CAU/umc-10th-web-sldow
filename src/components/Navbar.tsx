@@ -1,5 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
+import { signout } from "../apis/userApi";
 import { useState } from "react";
 
 interface NavbarProps {
@@ -15,11 +17,21 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
 export function Navbar({ onMenuClick }: NavbarProps) {
   const { authData, isLoggedIn, logout } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const logoutMutation = useMutation({
+    mutationFn: signout,
+    onSettled: () => {
+      logout();
+      queryClient.clear();
+      navigate('/login', { replace: true });
+    },
+  });
+
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    if (logoutMutation.isPending) return;
+    logoutMutation.mutate();
   };
 
   const handleMenuClick = () => {
@@ -63,9 +75,10 @@ export function Navbar({ onMenuClick }: NavbarProps) {
               </p>
               <button
                 onClick={handleLogout}
-                className="rounded-full px-4 py-2 text-sm font-semibold bg-pink-600 text-white hover:bg-pink-700 transition"
+                disabled={logoutMutation.isPending}
+                className="rounded-full px-4 py-2 text-sm font-semibold bg-pink-600 text-white hover:bg-pink-700 disabled:bg-pink-900 disabled:cursor-not-allowed transition"
               >
-                로그아웃
+                {logoutMutation.isPending ? '로그아웃 중...' : '로그아웃'}
               </button>
             </div>
           ) : (

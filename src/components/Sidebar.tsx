@@ -1,4 +1,9 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { deleteAccount } from '../apis/userApi';
+import { ConfirmModal } from './ConfirmModal';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -6,6 +11,11 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { isLoggedIn, logout } = useAuth();
+  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+
   const navClass = ({ isActive }: { isActive: boolean }) =>
     isActive
       ? 'text-pink-500 font-medium text-lg'
@@ -16,6 +26,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       onClose();
     }
   };
+
+  const withdrawMutation = useMutation({
+    mutationFn: deleteAccount,
+    onSuccess: () => {
+      logout();
+      queryClient.clear();
+      setIsWithdrawOpen(false);
+      navigate('/login', { replace: true });
+    },
+  });
 
   return (
     <>
@@ -33,20 +53,43 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <nav className="p-6">
-          <ul>
+        <nav className="p-6 h-full flex flex-col">
+          <ul className="space-y-3 flex-1">
             <li>
-              <NavLink
-                to="/"
-                className={navClass}
-                onClick={handleNavClick}
-              >
+              <NavLink to="/" className={navClass} onClick={handleNavClick}>
                 홈
               </NavLink>
             </li>
+            <li>
+              <NavLink to="/my" className={navClass} onClick={handleNavClick}>
+                마이페이지
+              </NavLink>
+            </li>
           </ul>
+
+          {isLoggedIn && (
+            <button
+              onClick={() => setIsWithdrawOpen(true)}
+              className="text-left text-sm text-neutral-500 hover:text-red-400 transition"
+            >
+              탈퇴하기
+            </button>
+          )}
         </nav>
       </aside>
+
+      <ConfirmModal
+        isOpen={isWithdrawOpen}
+        title="정말 탈퇴하시겠습니까?"
+        message="계정과 모든 게시글, 댓글, 좋아요 정보가 영구적으로 삭제됩니다."
+        confirmLabel={withdrawMutation.isPending ? '처리 중...' : '예'}
+        cancelLabel="아니오"
+        confirmDisabled={withdrawMutation.isPending}
+        onConfirm={() => withdrawMutation.mutate()}
+        onCancel={() => {
+          if (!withdrawMutation.isPending) setIsWithdrawOpen(false);
+        }}
+      />
     </>
   );
 }
