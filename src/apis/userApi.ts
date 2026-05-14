@@ -1,5 +1,67 @@
 import axiosInstance from './axiosInstance';
 
+export interface Like {
+  id: number;
+  userId: number;
+  lpId: number;
+}
+
+export interface LpListItem {
+  id: number;
+  title: string;
+  name?: string;
+  subtitle?: string;
+  description?: string;
+  content?: string;
+  thumbnail?: string | null;
+  likes?: Like[];
+}
+
+export interface Tag {
+  id: number;
+  name: string;
+}
+
+export interface UserProfile {
+  id: number;
+  name: string;
+  email: string;
+  bio: string | null;
+  avatar: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LpDetail extends LpListItem {
+  content: string;
+  published?: boolean;
+  authorId: number;
+  createdAt?: string;
+  updatedAt?: string;
+  tags?: Tag[];
+  likes: Like[];
+  author?: UserProfile;
+}
+
+export interface CommentListItem {
+  id: number;
+  content: string;
+  lpId: number;
+  authorId: number;
+  createdAt?: string;
+  updatedAt?: string;
+  author?: {
+    id: number;
+    name: string;
+  };
+}
+
+export interface CursorPage<T> {
+  data: T[];
+  nextCursor?: number | null;
+  hasNext?: boolean;
+}
+
 // 로그인
 export const signin = async (payload: { email: string; password: string }) => {
   const response = await axiosInstance.post(`/v1/auth/signin`, payload);
@@ -18,7 +80,7 @@ export const deleteAccount = async () => {
   return response.data.data;
 };
 
-export const getMyInfo = async () => {
+export const getMyInfo = async (): Promise<UserProfile> => {
   const response = await axiosInstance.get('/v1/users/me');
   return response.data.data;
 };
@@ -32,7 +94,7 @@ export const getLpsListInfinite = async ({
   order: 'asc' | 'desc';
   cursor?: number;
   limit?: number;
-}) => {
+}): Promise<CursorPage<LpListItem>> => {
   const response = await axiosInstance.get(`/v1/lps`, {
     params: { order, cursor, limit },
   });
@@ -50,7 +112,7 @@ export const getCommentsList = async ({
   order: 'asc' | 'desc';
   cursor?: number;
   limit?: number;
-}) => {
+}): Promise<CursorPage<CommentListItem>> => {
   const response = await axiosInstance.get(`/v1/lps/${lpId}/comments`, {
     params: { order, cursor, limit },
   });
@@ -103,7 +165,7 @@ export const deleteComment = async ({
 };
 
 // LP 상세 조회
-export const getLpDetail = async (lpId: number) => {
+export const getLpDetail = async (lpId: number): Promise<LpDetail> => {
   const response = await axiosInstance.get(`/v1/lps/${lpId}`);
   return response.data.data;
 };

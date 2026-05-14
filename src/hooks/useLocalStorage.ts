@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 interface useLocalStorageProps<T> {
   key: string;
@@ -14,16 +14,23 @@ export function useLocalStorage<T>({ key, initialValue }: useLocalStorageProps<T
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
       console.error(`Error reading localStorage key "${key}":`, error);
+      return initialValue;
     }
   });
 
   const setValue = useCallback(
     (value: T | ((val: T) => T)) => {
       try {
+        const item = window.localStorage.getItem(key);
+        const currentValue = item ? JSON.parse(item) : storedValue;
         //반환값을 저장하든지 그냥 값을 저장
-        const valueToStore = value instanceof Function ? value(storedValue) : value;
+        const valueToStore =
+          value instanceof Function ? value(currentValue) : value;
         setStoredValue(valueToStore);
         window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        window.dispatchEvent(
+          new CustomEvent(`local-storage:${key}`, { detail: valueToStore })
+        );
       } catch (error) {
         console.error(`Error setting localStorage key "${key}":`, error);
       }
@@ -36,9 +43,40 @@ export function useLocalStorage<T>({ key, initialValue }: useLocalStorageProps<T
     try {
       window.localStorage.removeItem(key);
       setStoredValue(initialValue);
+      window.dispatchEvent(
+        new CustomEvent(`local-storage:${key}`, { detail: initialValue })
+      );
     } catch (error) {
       console.error(`Error removing localStorage key "${key}":`, error);
     }
+  }, [key, initialValue]);
+
+  useEffect(() => {
+    const readStoredValue = () => {
+      try {
+        const item = window.localStorage.getItem(key);
+        setStoredValue(item ? JSON.parse(item) : initialValue);
+      } catch (error) {
+        console.error(`Error reading localStorage key "${key}":`, error);
+        setStoredValue(initialValue);
+      }
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === key) readStoredValue();
+    };
+
+    const handleLocalStorage = (event: Event) => {
+      setStoredValue((event as CustomEvent<T>).detail);
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener(`local-storage:${key}`, handleLocalStorage);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(`local-storage:${key}`, handleLocalStorage);
+    };
   }, [key, initialValue]);
 
   return { storedValue, setValue, removeValue };

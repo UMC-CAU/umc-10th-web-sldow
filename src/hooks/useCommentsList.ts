@@ -7,7 +7,8 @@ export function useCommentsList(
 ) {
   return useInfiniteQuery({
     queryKey: ['lpComments', lpId, order],
-    queryFn: ({ pageParam = undefined }) =>
+    initialPageParam: undefined as number | undefined,
+    queryFn: ({ pageParam }) =>
       getCommentsList({ lpId, order, cursor: pageParam }),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     staleTime: 1000 * 60 * 5,

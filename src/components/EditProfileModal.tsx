@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateMe, uploadImage } from '../apis/userApi';
-import { useAuth } from '../hooks/useAuth';
+import { isAxiosError } from 'axios';
+import { updateMe, uploadImage, type UserProfile } from '../apis/userApi';
+import { useAuth, type AuthData } from '../hooks/useAuth';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -13,10 +14,42 @@ interface EditProfileModalProps {
   };
 }
 
+interface UpdateProfileVariables {
+  name?: string;
+  bio?: string;
+  pendingFile: File | null;
+  removeAvatar: boolean;
+}
+
+const getStoredAuthData = (): AuthData | null => {
+  try {
+    const authData = window.localStorage.getItem('auth');
+    return authData ? JSON.parse(authData) : null;
+  } catch {
+    return null;
+  }
+};
+
 export function EditProfileModal({ isOpen, onClose, initial }: EditProfileModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <EditProfileModalContent
+      key={`${initial.name}-${initial.bio ?? ''}-${initial.avatar ?? ''}`}
+      onClose={onClose}
+      initial={initial}
+    />
+  );
+}
+
+function EditProfileModalContent({
+  onClose,
+  initial,
+}: Omit<EditProfileModalProps, 'isOpen'>) {
   const queryClient = useQueryClient();
-  const { authData, setAuthData } = useAuth();
+  const { setAuthData } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrlRef = useRef<string | null>(null);
 
   const [name, setName] = useState(initial.name);
   const [bio, setBio] = useState(initial.bio ?? '');
@@ -26,75 +59,103 @@ export function EditProfileModal({ isOpen, onClose, initial }: EditProfileModalP
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      setName(initial.name);
-      setBio(initial.bio ?? '');
-      setAvatarUrl(initial.avatar);
-      setPendingFile(null);
-      setPreviewUrl(null);
-      setErrorMessage(null);
-    }
-  }, [isOpen, initial]);
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    };
+  }, []);
 
-  useEffect(() => {
-    if (!pendingFile) {
-      setPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(pendingFile);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [pendingFile]);
+  const replacePreviewUrl = (nextUrl: string | null) => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = nextUrl;
+    setPreviewUrl(nextUrl);
+  };
 
   const mutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (variables: UpdateProfileVariables) => {
       let nextAvatar: string | undefined;
-      if (pendingFile) {
-        const { imageUrl } = await uploadImage(pendingFile);
+      if (variables.pendingFile) {
+        const { imageUrl } = await uploadImage(variables.pendingFile);
         nextAvatar = imageUrl;
-      } else if (avatarUrl === null && initial.avatar) {
+      } else if (variables.removeAvatar) {
         nextAvatar = '';
       }
 
       const payload: { name?: string; bio?: string; avatar?: string } = {};
-      if (name.trim() && name.trim() !== initial.name) payload.name = name.trim();
-      if (bio !== (initial.bio ?? '')) payload.bio = bio;
+      if (variables.name) payload.name = variables.name;
+      if (variables.bio !== undefined) payload.bio = variables.bio;
       if (nextAvatar !== undefined) payload.avatar = nextAvatar;
 
       return updateMe(payload);
     },
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: ['me'] });
+
+      const previousMe = queryClient.getQueryData<UserProfile>(['me']);
+      const previousAuthData = getStoredAuthData();
+
+      if (variables.name || variables.bio !== undefined || variables.removeAvatar) {
+        queryClient.setQueryData<UserProfile | undefined>(['me'], (current) =>
+          current
+            ? {
+                ...current,
+                ...(variables.name ? { name: variables.name } : {}),
+                ...(variables.bio !== undefined ? { bio: variables.bio } : {}),
+                ...(variables.removeAvatar ? { avatar: null } : {}),
+              }
+            : current
+        );
+      }
+
+      if (variables.name) {
+        setAuthData((currentAuthData) =>
+          currentAuthData ? { ...currentAuthData, name: variables.name as string } : currentAuthData
+        );
+      }
+
+      return { previousMe, previousAuthData };
+    },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['me'] });
-      if (authData && data?.name && data.name !== authData.name) {
-        setAuthData({ ...authData, name: data.name });
+      queryClient.setQueryData(['me'], data);
+      if (data?.name) {
+        setAuthData((currentAuthData) =>
+          currentAuthData && currentAuthData.name !== data.name
+            ? { ...currentAuthData, name: data.name }
+            : currentAuthData
+        );
       }
       onClose();
     },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.message ?? '프로필 수정에 실패했습니다.';
+    onError: (err: unknown, _variables, context) => {
+      queryClient.setQueryData(['me'], context?.previousMe);
+      setAuthData(context?.previousAuthData ?? null);
+      const msg = isAxiosError(err)
+        ? err.response?.data?.message
+        : '프로필 수정에 실패했습니다.';
       setErrorMessage(typeof msg === 'string' ? msg : '프로필 수정에 실패했습니다.');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['me'] });
     },
   });
 
   useEffect(() => {
-    if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !mutation.isPending) onClose();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [isOpen, mutation.isPending, onClose]);
-
-  if (!isOpen) return null;
+  }, [mutation.isPending, onClose]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0] ?? null;
     setPendingFile(selected);
+    replacePreviewUrl(selected ? URL.createObjectURL(selected) : null);
   };
 
   const handleRemoveAvatar = () => {
     setPendingFile(null);
     setAvatarUrl(null);
+    replacePreviewUrl(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -105,7 +166,14 @@ export function EditProfileModal({ isOpen, onClose, initial }: EditProfileModalP
       setErrorMessage('이름을 입력해주세요.');
       return;
     }
-    mutation.mutate();
+
+    const trimmedName = name.trim();
+    mutation.mutate({
+      name: trimmedName !== initial.name ? trimmedName : undefined,
+      bio: bio !== (initial.bio ?? '') ? bio : undefined,
+      pendingFile,
+      removeAvatar: avatarUrl === null && !!initial.avatar && !pendingFile,
+    });
   };
 
   const displayAvatar = previewUrl ?? avatarUrl;

@@ -8,12 +8,6 @@ interface NavbarProps {
   onMenuClick?: () => void;
 }
 
-//NavLink의 active 스타일링 기능
-const navClass = ({ isActive }: { isActive: boolean }) =>
-  isActive
-    ? "text-pink-500 font-medium"
-    : "text-neutral-500 transition-colors hover:text-neutral-400";
-
 export function Navbar({ onMenuClick }: NavbarProps) {
   const { authData, isLoggedIn, logout } = useAuth();
   const navigate = useNavigate();
