@@ -7,6 +7,8 @@ import {
   deleteLp,
   likeLp,
   unlikeLp,
+  type CommentListItem,
+  type LpDetail,
 } from '../apis/userApi';
 import { useCommentsList } from '../hooks/useCommentsList';
 import { useAuth } from '../hooks/useAuth';
@@ -27,10 +29,11 @@ export function LpDetailPage() {
   const observerTarget = useRef<HTMLDivElement>(null);
 
   const lpIdNumber = lpid ? Number(lpid) : 0;
+  const lpQueryKey = ['lp', lpid] as const;
 
   // LP 상세 정보
   const { data: lpDetail, isLoading, error, refetch } = useQuery({
-    queryKey: ['lp', lpid],
+    queryKey: lpQueryKey,
     queryFn: () => getLpDetail(lpIdNumber),
     enabled: !!lpid,
   });
@@ -87,12 +90,47 @@ export function LpDetailPage() {
     !!authData && !!lpDetail && lpDetail.authorId === authData.id;
   const hasLiked =
     !!authData &&
-    !!lpDetail?.likes?.some((l: any) => l.userId === authData.id);
+    !!lpDetail?.likes?.some((like) => like.userId === authData.id);
 
   const likeMutation = useMutation({
-    mutationFn: () => (hasLiked ? unlikeLp(lpIdNumber) : likeLp(lpIdNumber)),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lp', lpid] });
+    mutationFn: ({ shouldLike }: { shouldLike: boolean }) =>
+      shouldLike ? likeLp(lpIdNumber) : unlikeLp(lpIdNumber),
+    onMutate: async ({ shouldLike }) => {
+      if (!authData) return;
+
+      await queryClient.cancelQueries({ queryKey: lpQueryKey });
+      const previousLp = queryClient.getQueryData<LpDetail>(lpQueryKey);
+
+      queryClient.setQueryData<LpDetail | undefined>(lpQueryKey, (current) => {
+        if (!current) return current;
+
+        const likes = current.likes ?? [];
+        const alreadyLiked = likes.some((like) => like.userId === authData.id);
+
+        return {
+          ...current,
+          likes: shouldLike
+            ? alreadyLiked
+              ? likes
+              : [
+                  ...likes,
+                  {
+                    id: -authData.id,
+                    userId: authData.id,
+                    lpId: lpIdNumber,
+                  },
+                ]
+            : likes.filter((like) => like.userId !== authData.id),
+        };
+      });
+
+      return { previousLp };
+    },
+    onError: (_error, _variables, context) => {
+      queryClient.setQueryData(lpQueryKey, context?.previousLp);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: lpQueryKey });
     },
   });
 
@@ -191,7 +229,9 @@ export function LpDetailPage() {
             }`}
           >
             <button
-              onClick={() => authData && likeMutation.mutate()}
+              onClick={() =>
+                authData && likeMutation.mutate({ shouldLike: !hasLiked })
+              }
               disabled={!authData || likeMutation.isPending}
               className={`px-4 py-3 rounded-lg transition font-medium text-sm disabled:opacity-60 disabled:cursor-not-allowed ${
                 hasLiked
@@ -267,7 +307,7 @@ export function LpDetailPage() {
               )}
 
               {/* 댓글 목록 */}
-              {comments.map((comment: any) => (
+              {comments.map((comment: CommentListItem) => (
                 <CommentItem
                   key={comment.id}
                   comment={comment}

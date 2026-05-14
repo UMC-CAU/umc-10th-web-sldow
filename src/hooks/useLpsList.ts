@@ -6,7 +6,8 @@ export function useLpsList(sort: 'latest' | 'oldest' = 'latest') {
 
   return useInfiniteQuery({
     queryKey: ['lps', sort],
-    queryFn: ({ pageParam = undefined }) =>
+    initialPageParam: undefined as number | undefined,
+    queryFn: ({ pageParam }) =>
       getLpsListInfinite({ order, cursor: pageParam }),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     staleTime: 1000 * 60 * 5, // 5분
