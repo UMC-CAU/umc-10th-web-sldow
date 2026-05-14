@@ -1,16 +1,29 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useRef } from 'react';
-import { getLpDetail, createComment } from '../apis/userApi';
+import {
+  getLpDetail,
+  createComment,
+  deleteLp,
+  likeLp,
+  unlikeLp,
+} from '../apis/userApi';
 import { useCommentsList } from '../hooks/useCommentsList';
+import { useAuth } from '../hooks/useAuth';
 import { LoadingSpinner, SkeletonGrid } from '../components/loading';
+import { CommentItem } from '../components/CommentItem';
+import { CreateLpModal } from '../components/CreateLpModal';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 export function LpDetailPage() {
   const { lpid } = useParams<{ lpid: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { authData } = useAuth();
   const [commentOrder, setCommentOrder] = useState<'asc' | 'desc'>('desc');
   const [commentText, setCommentText] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
 
   const lpIdNumber = lpid ? Number(lpid) : 0;
@@ -51,19 +64,43 @@ export function LpDetailPage() {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const handleCommentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentText.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      await createComment({ lpId: lpIdNumber, content: commentText });
+  const createCommentMutation = useMutation({
+    mutationFn: (content: string) =>
+      createComment({ lpId: lpIdNumber, content }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lpComments', lpIdNumber] });
       setCommentText('');
-    } catch (error) {
-      console.error('댓글 작성 실패:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+  });
+
+  const deleteLpMutation = useMutation({
+    mutationFn: () => deleteLp(lpIdNumber),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lps'] });
+      queryClient.removeQueries({ queryKey: ['lp', lpid] });
+      setIsDeleteOpen(false);
+      navigate('/', { replace: true });
+    },
+  });
+
+  const isMine =
+    !!authData && !!lpDetail && lpDetail.authorId === authData.id;
+  const hasLiked =
+    !!authData &&
+    !!lpDetail?.likes?.some((l: any) => l.userId === authData.id);
+
+  const likeMutation = useMutation({
+    mutationFn: () => (hasLiked ? unlikeLp(lpIdNumber) : likeLp(lpIdNumber)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lp', lpid] });
+    },
+  });
+
+  const handleCommentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = commentText.trim();
+    if (!trimmed) return;
+    createCommentMutation.mutate(trimmed);
   };
 
   if (isLoading) {
@@ -148,16 +185,38 @@ export function LpDetailPage() {
           </div>
 
           {/* 액션 버튼 */}
-          <div className="grid grid-cols-3 gap-3 pt-6 border-t border-neutral-800">
-            <button className="px-4 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition font-medium text-sm">
-              ❤️ 좋아요
+          <div
+            className={`grid gap-3 pt-6 border-t border-neutral-800 ${
+              isMine ? 'grid-cols-3' : 'grid-cols-1'
+            }`}
+          >
+            <button
+              onClick={() => authData && likeMutation.mutate()}
+              disabled={!authData || likeMutation.isPending}
+              className={`px-4 py-3 rounded-lg transition font-medium text-sm disabled:opacity-60 disabled:cursor-not-allowed ${
+                hasLiked
+                  ? 'bg-pink-600 text-white hover:bg-pink-700'
+                  : 'bg-neutral-800 text-white hover:bg-neutral-700'
+              }`}
+            >
+              {hasLiked ? '❤️' : '🤍'} 좋아요 {lpDetail.likes?.length ?? 0}
             </button>
-            <button className="px-4 py-3 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition font-medium text-sm">
-              ✏️ 수정
-            </button>
-            <button className="px-4 py-3 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition font-medium text-sm">
-              🗑️ 삭제
-            </button>
+            {isMine && (
+              <>
+                <button
+                  onClick={() => setIsEditOpen(true)}
+                  className="px-4 py-3 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition font-medium text-sm"
+                >
+                  ✏️ 수정
+                </button>
+                <button
+                  onClick={() => setIsDeleteOpen(true)}
+                  className="px-4 py-3 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition font-medium text-sm"
+                >
+                  🗑️ 삭제
+                </button>
+              </>
+            )}
           </div>
 
           {/* 댓글 섹션 */}
@@ -179,10 +238,10 @@ export function LpDetailPage() {
                   </p>
                   <button
                     type="submit"
-                    disabled={isSubmitting || !commentText.trim()}
+                    disabled={createCommentMutation.isPending || !commentText.trim()}
                     className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium text-sm"
                   >
-                    {isSubmitting ? '작성 중...' : '댓글 작성'}
+                    {createCommentMutation.isPending ? '작성 중...' : '댓글 작성'}
                   </button>
                 </div>
               </form>
@@ -209,22 +268,12 @@ export function LpDetailPage() {
 
               {/* 댓글 목록 */}
               {comments.map((comment: any) => (
-                <div
+                <CommentItem
                   key={comment.id}
-                  className="p-4 bg-neutral-800 rounded-lg space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-white text-sm">
-                      {comment.author?.name || '익명'}
-                    </p>
-                    <p className="text-xs text-neutral-500">
-                      {comment.createdAt
-                        ? new Date(comment.createdAt).toLocaleDateString('ko-KR')
-                        : '-'}
-                    </p>
-                  </div>
-                  <p className="text-neutral-300 text-sm">{comment.content}</p>
-                </div>
+                  comment={comment}
+                  lpId={lpIdNumber}
+                  currentUserId={authData?.id}
+                />
               ))}
 
               {/* 추가 로딩 */}
@@ -243,6 +292,33 @@ export function LpDetailPage() {
           </div>
         </div>
       </div>
+
+      {isMine && (
+        <CreateLpModal
+          isOpen={isEditOpen}
+          onClose={() => setIsEditOpen(false)}
+          lp={{
+            id: lpDetail.id,
+            title: lpDetail.title,
+            content: lpDetail.content,
+            thumbnail: lpDetail.thumbnail ?? null,
+            tags: lpDetail.tags ?? [],
+          }}
+        />
+      )}
+
+      <ConfirmModal
+        isOpen={isDeleteOpen}
+        title="LP를 삭제하시겠습니까?"
+        message="삭제된 LP는 복구할 수 없습니다."
+        confirmLabel={deleteLpMutation.isPending ? '삭제 중...' : '삭제'}
+        cancelLabel="취소"
+        confirmDisabled={deleteLpMutation.isPending}
+        onConfirm={() => deleteLpMutation.mutate()}
+        onCancel={() => {
+          if (!deleteLpMutation.isPending) setIsDeleteOpen(false);
+        }}
+      />
     </div>
   );
 }

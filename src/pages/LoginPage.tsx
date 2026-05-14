@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { GoogleLoginButton } from "../components/GoogleLoginButton";
 import { BackButton } from "../components/BackButton";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useAuth } from "../hooks/useAuth";
+import { signin } from "../apis/userApi";
 
 const loginSchema = z.object({
   email: z.email("유효하지 않은 이메일 형식입니다."),
@@ -35,44 +37,25 @@ export function LoginPage() {
     defaultValues: { email: "", password: "" },
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/v1/auth/signin`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: data.email,
-            password: data.password,
-          }),
-        }
-      );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "로그인에 실패했습니다.");
-      }
-
-      const result = await response.json();
-      console.log("로그인 정보:", result.data);
-      setAuthData(result.data);
-
-      // 원래 가려던 페이지로 복귀, 없으면 홈으로
+  const loginMutation = useMutation({
+    mutationFn: signin,
+    onSuccess: (result) => {
+      setAuthData(result);
       const redirectTo = sessionStorage.getItem("redirectTo") || "/";
       sessionStorage.removeItem("redirectTo");
+      navigate(redirectTo, { replace: true });
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message ?? "로그인에 실패했습니다.";
+      setErrorMessage(typeof msg === "string" ? msg : "로그인에 실패했습니다.");
+    },
+  });
 
-      setTimeout(() => {
-        window.location.href = redirectTo;
-      }, 0);
-    } catch (error) {
-      console.error("로그인 오류:", error);
-      alert(
-        error instanceof Error ? error.message : "로그인에 실패했습니다."
-      );
-    }
+  const onSubmit = (data: LoginFormValues) => {
+    setErrorMessage(null);
+    loginMutation.mutate(data);
   };
 
   return (
@@ -128,16 +111,23 @@ export function LoginPage() {
               )}
             </div>
 
+            {errorMessage && (
+              <p className="text-xs font-medium text-pink-400" role="alert">
+                {errorMessage}
+              </p>
+            )}
+
             <button
               type="submit"
-              disabled={!isValid}
-              aria-disabled={!isValid}
-              className={`w-full rounded-md px-4 py-3 text-sm font-semibold text-white shadow-sm ${isValid
+              disabled={!isValid || loginMutation.isPending}
+              aria-disabled={!isValid || loginMutation.isPending}
+              className={`w-full rounded-md px-4 py-3 text-sm font-semibold text-white shadow-sm ${
+                isValid && !loginMutation.isPending
                   ? "bg-pink-600 hover:bg-pink-700"
                   : "cursor-not-allowed bg-neutral-700 text-white/80"
-                }`}
+              }`}
             >
-              로그인
+              {loginMutation.isPending ? "로그인 중..." : "로그인"}
             </button>
           </form>
         </section>
