@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { GalleryGrid } from "../components/GalleryGrid";
+import { SearchBar } from "../components/SearchBar";
 import { useLpsList } from "../hooks/useLpsList";
 import { SkeletonGrid } from "../components/loading";
 
 export function HomePage() {
   const [sort, setSort] = useState<"latest" | "oldest">("latest");
+  const [keyword, setKeyword] = useState("");
   const observerTarget = useRef<HTMLDivElement>(null);
 
   // useInfiniteQuery로 lps 목록 조회
@@ -57,6 +59,11 @@ export function HomePage() {
 
   return (
     <div className="p-4 md:p-8 min-h-screen bg-black">
+      {/* 검색 */}
+      <div className="flex justify-center mb-4">
+        <SearchBar value={keyword} onChange={setKeyword} />
+      </div>
+
       {/* 정렬 버튼 */}
       <div className="mb-6 flex items-center gap-4">
         <button
