@@ -3,12 +3,16 @@ import { GalleryGrid } from "../components/GalleryGrid";
 import { SearchBar } from "../components/SearchBar";
 import { useLpsList } from "../hooks/useLpsList";
 import { useDebounce } from "../hooks/useDebounce";
+import { useThrottle } from "../hooks/useThrottle";
 import { SkeletonGrid } from "../components/loading";
 
 export function HomePage() {
   const [sort, setSort] = useState<"latest" | "oldest">("latest");
   const [keyword, setKeyword] = useState("");
   const debouncedKeyword = useDebounce(keyword, 300);
+  //
+  const [intersectionTick, setIntersectionTick] = useState(0);
+  const throttledTick = useThrottle(intersectionTick, 1000);
   const observerTarget = useRef<HTMLDivElement>(null);
 
   // useInfiniteQuery로 lps 목록 조회
@@ -33,12 +37,17 @@ export function HomePage() {
     }))
   ) || [];
 
-  // Intersection Observer로 무한 스크롤 구현
+  // Intersection Observer는 교차 시점에 카운터만 증가
+  // 실제 fetch는 throttle된 tick으로 트리거
+  // deps에 hasGallery를 넣어 트리거 div가 처음 등장할 때 옵저버를 부착
+  const hasGallery = galleryItems.length > 0;
   useEffect(() => {
+    if (!hasGallery) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
+        if (entries[0].isIntersecting) {
+          setIntersectionTick((c) => c + 1);
         }
       },
       { threshold: 0.1 }
@@ -49,7 +58,15 @@ export function HomePage() {
     }
 
     return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasGallery]);
+
+  // throttle된 tick이 갱신될 때만 fetchNextPage 호출
+  // 1초에 한 번으로 제한
+  useEffect(() => {
+    if (throttledTick > 0 && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [throttledTick, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleGalleryItemClick = (item: any) => {
     console.log("클릭된 아이템:", item);
