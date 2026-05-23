@@ -3,12 +3,17 @@ import { GalleryGrid } from "../components/GalleryGrid";
 import { SearchBar } from "../components/SearchBar";
 import { useLpsList } from "../hooks/useLpsList";
 import { useDebounce } from "../hooks/useDebounce";
+import { useThrottle } from "../hooks/useThrottle";
 import { SkeletonGrid } from "../components/loading";
 
 export function HomePage() {
   const [sort, setSort] = useState<"latest" | "oldest">("latest");
   const [keyword, setKeyword] = useState("");
   const debouncedKeyword = useDebounce(keyword, 300);
+  //
+  const [intersectionTick, setIntersectionTick] = useState(0);
+  const throttledTick = useThrottle(intersectionTick, 1000);
+  const lastFiredTickRef = useRef(0);
   const observerTarget = useRef<HTMLDivElement>(null);
 
   // useInfiniteQuery로 lps 목록 조회
@@ -33,12 +38,18 @@ export function HomePage() {
     }))
   ) || [];
 
-  // Intersection Observer로 무한 스크롤 구현
+  // Intersection Observer는 교차 시점에 카운터만 증가
+  // 실제 fetch는 throttle된 tick으로 트리거
+  // deps에 hasGallery를 넣어 트리거 div가 처음 등장할 때 옵저버를 부착
+  const hasGallery = galleryItems.length > 0;
   useEffect(() => {
+    if (!hasGallery) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
+        if (entries[0].isIntersecting) {
+          console.log(`%c[Observer] 발화 (${new Date().toLocaleTimeString()}.${Date.now() % 1000})`, "color: orange");
+          setIntersectionTick((c) => c + 1);
         }
       },
       { threshold: 0.1 }
@@ -49,7 +60,20 @@ export function HomePage() {
     }
 
     return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasGallery]);
+
+  // throttle된 tick이 "증가"했을 때만 fetchNextPage 호출
+  // (deps 중 isFetchingNextPage/fetchNextPage 변화로 인한 재실행은 가드로 차단)
+  useEffect(() => {
+    if (throttledTick <= lastFiredTickRef.current) return;
+    console.log(`%c[Throttle] tick=${throttledTick} (${new Date().toLocaleTimeString()}.${Date.now() % 1000})`, "color: cyan; font-weight: bold");
+
+    if (!hasNextPage || isFetchingNextPage) return;
+
+    lastFiredTickRef.current = throttledTick;
+    console.log(`%c[Fetch] fetchNextPage 호출`, "color: lime; font-weight: bold");
+    fetchNextPage();
+  }, [throttledTick, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleGalleryItemClick = (item: any) => {
     console.log("클릭된 아이템:", item);
