@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { GalleryGrid } from "../components/GalleryGrid";
 import { SearchBar } from "../components/SearchBar";
 import { useLpsList } from "../hooks/useLpsList";
+import { useDebounce } from "../hooks/useDebounce";
 import { SkeletonGrid } from "../components/loading";
 
 export function HomePage() {
   const [sort, setSort] = useState<"latest" | "oldest">("latest");
   const [keyword, setKeyword] = useState("");
+  const debouncedKeyword = useDebounce(keyword, 300);
   const observerTarget = useRef<HTMLDivElement>(null);
 
   // useInfiniteQuery로 lps 목록 조회
@@ -18,7 +20,7 @@ export function HomePage() {
     hasNextPage,
     isFetchingNextPage,
     refetch,
-  } = useLpsList(sort);
+  } = useLpsList(sort, debouncedKeyword);
 
   // API 데이터를 GalleryGrid 형식으로 변환
   const galleryItems = data?.pages.flatMap((page) =>
@@ -127,13 +129,19 @@ export function HomePage() {
       {!isLoading && galleryItems.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center py-20">
           <div className="text-4xl mb-4">🎵</div>
-          <p className="text-neutral-400 text-lg">데이터가 없습니다.</p>
-          <button
-            onClick={() => refetch()}
-            className="mt-4 px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-700 transition text-sm"
-          >
-            새로고침
-          </button>
+          <p className="text-neutral-400 text-lg">
+            {debouncedKeyword
+              ? `"${debouncedKeyword}" 검색 결과가 없습니다.`
+              : "데이터가 없습니다."}
+          </p>
+          {!debouncedKeyword && (
+            <button
+              onClick={() => refetch()}
+              className="mt-4 px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-700 transition text-sm"
+            >
+              새로고침
+            </button>
+          )}
         </div>
       )}
     </div>
