@@ -14,6 +14,7 @@ export function useLpsList(
     queryFn: ({ pageParam }) =>
       getLpsListInfinite({ order, cursor: pageParam, search: trimmedSearch }),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    enabled: trimmedSearch.length > 0,
     staleTime: 1000 * 60 * 5, // 5분
     gcTime: 1000 * 60 * 10, // 10분
     retry: 3,
