@@ -90,13 +90,16 @@ export const getLpsListInfinite = async ({
   order,
   cursor,
   limit = 10,
+  search,
 }: {
   order: 'asc' | 'desc';
   cursor?: number;
   limit?: number;
+  search?: string;
 }): Promise<CursorPage<LpListItem>> => {
+  const trimmed = search?.trim();
   const response = await axiosInstance.get(`/v1/lps`, {
-    params: { order, cursor, limit },
+    params: { order, cursor, limit, search: trimmed || undefined },
   });
   return response.data.data;
 };
