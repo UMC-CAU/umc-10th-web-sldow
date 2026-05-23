@@ -48,6 +48,7 @@ export function HomePage() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
+          console.log(`%c[Observer] 발화 (${new Date().toLocaleTimeString()}.${Date.now() % 1000})`, "color: orange");
           setIntersectionTick((c) => c + 1);
         }
       },
@@ -65,9 +66,12 @@ export function HomePage() {
   // (deps 중 isFetchingNextPage/fetchNextPage 변화로 인한 재실행은 가드로 차단)
   useEffect(() => {
     if (throttledTick <= lastFiredTickRef.current) return;
+    console.log(`%c[Throttle] tick=${throttledTick} (${new Date().toLocaleTimeString()}.${Date.now() % 1000})`, "color: cyan; font-weight: bold");
+
     if (!hasNextPage || isFetchingNextPage) return;
 
     lastFiredTickRef.current = throttledTick;
+    console.log(`%c[Fetch] fetchNextPage 호출`, "color: lime; font-weight: bold");
     fetchNextPage();
   }, [throttledTick, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
