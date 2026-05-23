@@ -13,6 +13,7 @@ export function HomePage() {
   //
   const [intersectionTick, setIntersectionTick] = useState(0);
   const throttledTick = useThrottle(intersectionTick, 1000);
+  const lastFiredTickRef = useRef(0);
   const observerTarget = useRef<HTMLDivElement>(null);
 
   // useInfiniteQuery로 lps 목록 조회
@@ -47,7 +48,6 @@ export function HomePage() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          console.log(`%c[Observer] 발화 (${new Date().toLocaleTimeString()}.${Date.now() % 1000})`, "color: orange");
           setIntersectionTick((c) => c + 1);
         }
       },
@@ -61,16 +61,14 @@ export function HomePage() {
     return () => observer.disconnect();
   }, [hasGallery]);
 
-  // throttle된 tick이 갱신될 때만 fetchNextPage 호출
-  // 1초에 한 번으로 제한
+  // throttle된 tick이 "증가"했을 때만 fetchNextPage 호출
+  // (deps 중 isFetchingNextPage/fetchNextPage 변화로 인한 재실행은 가드로 차단)
   useEffect(() => {
-    if (throttledTick === 0) return;
-    console.log(`%c[Throttle] tick=${throttledTick} (${new Date().toLocaleTimeString()}.${Date.now() % 1000})`, "color: cyan; font-weight: bold");
+    if (throttledTick <= lastFiredTickRef.current) return;
+    if (!hasNextPage || isFetchingNextPage) return;
 
-    if (hasNextPage && !isFetchingNextPage) {
-      console.log(`%c[Fetch] fetchNextPage 호출`, "color: lime; font-weight: bold");
-      fetchNextPage();
-    }
+    lastFiredTickRef.current = throttledTick;
+    fetchNextPage();
   }, [throttledTick, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleGalleryItemClick = (item: any) => {
