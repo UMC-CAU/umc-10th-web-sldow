@@ -1,28 +1,19 @@
-import { useEffect } from 'react';
 import { ShoppingCart } from 'lucide-react';
-import { useDispatch, useSelector } from 'react-redux';
 import { Header } from '../components/Header';
 import { CartItem } from '../components/CartItem';
 import { ClearCartModal } from '../components/ClearCartModal';
-import {
-  calculateTotals,
-  decrease,
-  increase,
-  removeItem,
-} from '../features/cart/cartSlice';
-import { openModal } from '../features/modal/modalSlice';
-import type { AppDispatch, RootState } from '../store/store';
+import { useCartStore } from '../store/useCartStore';
+import { useModalStore } from '../store/useModalStore';
 
 export const CartPage = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { cartItems, amount, total } = useSelector(
-    (state: RootState) => state.cart,
-  );
-  const { isOpen } = useSelector((state: RootState) => state.modal);
-
-  useEffect(() => {
-    dispatch(calculateTotals());
-  }, [cartItems, dispatch]);
+  const cartItems = useCartStore((state) => state.cartItems);
+  const amount = useCartStore((state) => state.amount);
+  const total = useCartStore((state) => state.total);
+  const increase = useCartStore((state) => state.increase);
+  const decrease = useCartStore((state) => state.decrease);
+  const removeItem = useCartStore((state) => state.removeItem);
+  const isOpen = useModalStore((state) => state.isOpen);
+  const open = useModalStore((state) => state.open);
 
   return (
     <div className="min-h-screen bg-background">
@@ -36,9 +27,9 @@ export const CartPage = () => {
                 <CartItem
                   key={item.id}
                   item={item}
-                  onDecrease={(id) => dispatch(decrease(id))}
-                  onIncrease={(id) => dispatch(increase(id))}
-                  onRemove={(id) => dispatch(removeItem(id))}
+                  onDecrease={decrease}
+                  onIncrease={increase}
+                  onRemove={removeItem}
                   showBorder={index !== cartItems.length - 1}
                 />
               ))}
@@ -60,7 +51,7 @@ export const CartPage = () => {
             <div className="mt-8 flex justify-center">
               <button
                 type="button"
-                onClick={() => dispatch(openModal())}
+                onClick={open}
                 className="rounded-lg border-2 border-primary bg-card px-8 py-3 text-foreground transition-colors duration-200 hover:bg-primary hover:text-primary-foreground"
               >
                 전체 삭제

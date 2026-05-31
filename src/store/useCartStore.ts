@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import cartItems from '../constants/cartItems';
 import type { CartItem, CartStore, CartTotals } from '../types';
 
-const getTotals = (items: CartItem[]): CartTotals =>
+const calcTotals = (items: CartItem[]): CartTotals =>
   items.reduce(
     (totals, item) => {
       totals.amount += item.amount;
@@ -13,53 +13,40 @@ const getTotals = (items: CartItem[]): CartTotals =>
     { amount: 0, total: 0 },
   );
 
+const cartState = (items: CartItem[]) => ({
+  cartItems: items,
+  ...calcTotals(items),
+});
+
 const initialCartItems = cartItems.map((item) => ({ ...item }));
-const initialTotals = getTotals(initialCartItems);
 
 export const useCartStore = create<CartStore>((set, get) => ({
-  cartItems: initialCartItems,
-  amount: initialTotals.amount,
-  total: initialTotals.total,
+  ...cartState(initialCartItems),
   increase: (id) => {
     set((state) => {
-      const nextCartItems = state.cartItems.map((item) =>
+      const items = state.cartItems.map((item) =>
         item.id === id ? { ...item, amount: item.amount + 1 } : item,
       );
-      const totals = getTotals(nextCartItems);
 
-      return {
-        cartItems: nextCartItems,
-        amount: totals.amount,
-        total: totals.total,
-      };
+      return cartState(items);
     });
   },
   decrease: (id) => {
     set((state) => {
-      const nextCartItems = state.cartItems
+      const items = state.cartItems
         .map((item) =>
           item.id === id ? { ...item, amount: item.amount - 1 } : item,
         )
         .filter((item) => item.amount > 0);
-      const totals = getTotals(nextCartItems);
 
-      return {
-        cartItems: nextCartItems,
-        amount: totals.amount,
-        total: totals.total,
-      };
+      return cartState(items);
     });
   },
   removeItem: (id) => {
     set((state) => {
-      const nextCartItems = state.cartItems.filter((item) => item.id !== id);
-      const totals = getTotals(nextCartItems);
+      const items = state.cartItems.filter((item) => item.id !== id);
 
-      return {
-        cartItems: nextCartItems,
-        amount: totals.amount,
-        total: totals.total,
-      };
+      return cartState(items);
     });
   },
   clearCart: () => {
@@ -70,11 +57,6 @@ export const useCartStore = create<CartStore>((set, get) => ({
     });
   },
   calculateTotals: () => {
-    const totals = getTotals(get().cartItems);
-
-    set({
-      amount: totals.amount,
-      total: totals.total,
-    });
+    set(calcTotals(get().cartItems));
   },
 }));

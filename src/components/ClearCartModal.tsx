@@ -1,20 +1,13 @@
-import { useDispatch } from 'react-redux';
-import { clearCart } from '../features/cart/cartSlice';
-import { closeModal } from '../features/modal/modalSlice';
-import type { AppDispatch } from '../store/store';
+import { useModalStore } from '../store/useModalStore';
 
 export const ClearCartModal = () => {
-  const dispatch = useDispatch<AppDispatch>();
-
-  const handleConfirm = () => {
-    dispatch(clearCart());
-    dispatch(closeModal());
-  };
+  const close = useModalStore((state) => state.close);
+  const clearCartAndClose = useModalStore((state) => state.clearCartAndClose);
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
-      onClick={() => dispatch(closeModal())}
+      onClick={close}
     >
       <div
         role="dialog"
@@ -32,14 +25,14 @@ export const ClearCartModal = () => {
         <div className="mt-6 flex justify-center gap-3">
           <button
             type="button"
-            onClick={() => dispatch(closeModal())}
+            onClick={close}
             className="rounded-md border border-border bg-card px-5 py-2 text-foreground transition-colors duration-200 hover:bg-muted"
           >
             아니요
           </button>
           <button
             type="button"
-            onClick={handleConfirm}
+            onClick={clearCartAndClose}
             className="rounded-md bg-destructive px-5 py-2 text-destructive-foreground transition-colors duration-200 hover:bg-destructive/90"
           >
             네
