@@ -3,13 +3,14 @@ import { ShoppingCart } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Header } from '../components/Header';
 import { CartItem } from '../components/CartItem';
+import { ClearCartModal } from '../components/ClearCartModal';
 import {
   calculateTotals,
-  clearCart,
   decrease,
   increase,
   removeItem,
-} from '../store/cartSlice';
+} from '../features/cart/cartSlice';
+import { openModal } from '../features/modal/modalSlice';
 import type { AppDispatch, RootState } from '../store/store';
 
 export const CartPage = () => {
@@ -17,6 +18,7 @@ export const CartPage = () => {
   const { cartItems, amount, total } = useSelector(
     (state: RootState) => state.cart,
   );
+  const { isOpen } = useSelector((state: RootState) => state.modal);
 
   useEffect(() => {
     dispatch(calculateTotals());
@@ -58,7 +60,7 @@ export const CartPage = () => {
             <div className="mt-8 flex justify-center">
               <button
                 type="button"
-                onClick={() => dispatch(clearCart())}
+                onClick={() => dispatch(openModal())}
                 className="rounded-lg border-2 border-primary bg-card px-8 py-3 text-foreground transition-colors duration-200 hover:bg-primary hover:text-primary-foreground"
               >
                 전체 삭제
@@ -72,6 +74,8 @@ export const CartPage = () => {
           </div>
         )}
       </div>
+
+      {isOpen && <ClearCartModal />}
     </div>
   );
 };

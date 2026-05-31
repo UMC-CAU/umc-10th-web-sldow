@@ -1,10 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
-import cartReducer from './cartSlice';
+import cartReducer from '../features/cart/cartSlice';
+import modalReducer from '../features/modal/modalSlice';
 
-//cart 상태를 변경하는 reducer 등록
+// cart와 modal slice reducer를 store에 등록
 export const store = configureStore({
   reducer: {
     cart: cartReducer,
+    modal: modalReducer,
   },
 });
 
