@@ -1,12 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import cartItems from '../../constants/cartItems';
-import type { CartItem } from '../../types';
-
-interface CartState {
-  cartItems: CartItem[];
-  amount: number;
-  total: number;
-}
+import type { CartItem, CartState } from '../../types';
 
 //도우미 함수
 const getTotals = (items: CartItem[]) =>
