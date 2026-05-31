@@ -1,8 +1,7 @@
 import { useModalStore } from '../store/useModalStore';
 
 export const ClearCartModal = () => {
-  const close = useModalStore((state) => state.close);
-  const clearCartAndClose = useModalStore((state) => state.clearCartAndClose);
+  const { close, clearCartAndClose } = useModalStore();
 
   return (
     <div

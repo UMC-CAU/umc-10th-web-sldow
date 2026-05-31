@@ -6,14 +6,9 @@ import { useCartStore } from '../store/useCartStore';
 import { useModalStore } from '../store/useModalStore';
 
 export const CartPage = () => {
-  const cartItems = useCartStore((state) => state.cartItems);
-  const amount = useCartStore((state) => state.amount);
-  const total = useCartStore((state) => state.total);
-  const increase = useCartStore((state) => state.increase);
-  const decrease = useCartStore((state) => state.decrease);
-  const removeItem = useCartStore((state) => state.removeItem);
-  const isOpen = useModalStore((state) => state.isOpen);
-  const open = useModalStore((state) => state.open);
+  const { cartItems, amount, total, increase, decrease, removeItem } =
+    useCartStore();
+  const { isOpen, open } = useModalStore();
 
   return (
     <div className="min-h-screen bg-background">
