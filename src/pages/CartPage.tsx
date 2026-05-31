@@ -1,10 +1,26 @@
+import { useEffect } from 'react';
 import { ShoppingCart } from 'lucide-react';
-import { useCart } from '../hooks/useCart';
+import { useDispatch, useSelector } from 'react-redux';
 import { Header } from '../components/Header';
 import { CartItem } from '../components/CartItem';
+import {
+  calculateTotals,
+  clearCart,
+  decrease,
+  increase,
+  removeItem,
+} from '../store/cartSlice';
+import type { AppDispatch, RootState } from '../store/store';
 
 export const CartPage = () => {
-  const { cartItems, amount, total, increase, decrease, clearCart } = useCart();
+  const dispatch = useDispatch<AppDispatch>();
+  const { cartItems, amount, total } = useSelector(
+    (state: RootState) => state.cart,
+  );
+
+  useEffect(() => {
+    dispatch(calculateTotals());
+  }, [cartItems, dispatch]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -18,8 +34,9 @@ export const CartPage = () => {
                 <CartItem
                   key={item.id}
                   item={item}
-                  onDecrease={decrease}
-                  onIncrease={increase}
+                  onDecrease={(id) => dispatch(decrease(id))}
+                  onIncrease={(id) => dispatch(increase(id))}
+                  onRemove={(id) => dispatch(removeItem(id))}
                   showBorder={index !== cartItems.length - 1}
                 />
               ))}
@@ -41,7 +58,7 @@ export const CartPage = () => {
             <div className="mt-8 flex justify-center">
               <button
                 type="button"
-                onClick={clearCart}
+                onClick={() => dispatch(clearCart())}
                 className="rounded-lg border-2 border-primary bg-card px-8 py-3 text-foreground transition-colors duration-200 hover:bg-primary hover:text-primary-foreground"
               >
                 전체 삭제

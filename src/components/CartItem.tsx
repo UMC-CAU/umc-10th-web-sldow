@@ -1,10 +1,11 @@
-import { Minus, Plus } from 'lucide-react';
-import { CartItem as CartItemType } from '../types';
+import { Minus, Plus, Trash2 } from 'lucide-react';
+import type { CartItem as CartItemType } from '../types';
 
 interface CartItemProps {
   item: CartItemType;
   onDecrease: (id: string) => void;
   onIncrease: (id: string) => void;
+  onRemove: (id: string) => void;
   showBorder: boolean;
 }
 
@@ -12,6 +13,7 @@ export const CartItem = ({
   item,
   onDecrease,
   onIncrease,
+  onRemove,
   showBorder,
 }: CartItemProps) => {
   return (
@@ -55,6 +57,14 @@ export const CartItem = ({
           aria-label={`${item.title} 수량 증가`}
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onRemove(item.id)}
+          className="flex h-9 w-9 items-center justify-center rounded-md bg-muted text-destructive transition-colors duration-200 hover:bg-destructive hover:text-destructive-foreground"
+          aria-label={`${item.title} 삭제`}
+        >
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
     </div>
