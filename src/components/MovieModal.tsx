@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import type { Movie } from '../types/movie';
 
 const formatDate = (date: string) => {
@@ -66,22 +67,30 @@ export const MovieModal = ({ movie, onClose }: MovieModalProps) => {
           </p>
 
           {/* 버튼 영역 */}
-          <div className="mt-6 flex gap-3">
-            <a
-              href={imdbUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 rounded-lg bg-yellow-400 py-2.5 text-center font-semibold text-neutral-900 transition-colors hover:bg-yellow-500"
+          <div className="mt-6 flex flex-col gap-3">
+            <Link
+              to={`/movies/${movie.id}`}
+              className="rounded-lg bg-blue-600 py-2.5 text-center font-semibold text-white transition-colors hover:bg-blue-700"
             >
-              IMDb에서 검색하기
-            </a>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 rounded-lg border border-neutral-300 py-2.5 font-semibold text-neutral-700 transition-colors hover:bg-neutral-100"
-            >
-              닫기
-            </button>
+              상세 페이지로 이동
+            </Link>
+            <div className="flex gap-3">
+              <a
+                href={imdbUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 rounded-lg bg-yellow-400 py-2.5 text-center font-semibold text-neutral-900 transition-colors hover:bg-yellow-500"
+              >
+                IMDb에서 검색하기
+              </a>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 rounded-lg border border-neutral-300 py-2.5 font-semibold text-neutral-700 transition-colors hover:bg-neutral-100"
+              >
+                닫기
+              </button>
+            </div>
           </div>
         </div>
       </div>
