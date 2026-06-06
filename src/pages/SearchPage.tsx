@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useCallback, useState, type FormEvent } from 'react';
 import { useSearchMovies } from '../hooks/useSearchMovies';
 import { MovieCard } from '../components/MovieCard';
 import { MovieModal } from '../components/MovieModal';
@@ -24,6 +24,15 @@ export const SearchPage = () => {
     if (!title.trim()) return;
     setSearchParams({ query: title.trim(), includeAdult, language });
   };
+
+  // memo된 MovieCard가 title 입력마다 리렌더되지 않도록 참조를 고정
+  const handleSelect = useCallback((movie: Movie) => {
+    setSelectedMovie(movie);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setSelectedMovie(null);
+  }, []);
 
   const movies = data?.results ?? [];
 
@@ -112,21 +121,14 @@ export const SearchPage = () => {
         {!isFetching && movies.length > 0 && (
           <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
             {movies.map((movie) => (
-              <MovieCard
-                key={movie.id}
-                movie={movie}
-                onClick={() => setSelectedMovie(movie)}
-              />
+              <MovieCard key={movie.id} movie={movie} onSelect={handleSelect} />
             ))}
           </div>
         )}
       </div>
 
       {selectedMovie && (
-        <MovieModal
-          movie={selectedMovie}
-          onClose={() => setSelectedMovie(null)}
-        />
+        <MovieModal movie={selectedMovie} onClose={handleCloseModal} />
       )}
     </div>
   );

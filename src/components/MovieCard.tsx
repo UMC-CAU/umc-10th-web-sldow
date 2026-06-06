@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Movie } from '../types/movie';
 
 const formatDate = (date: string) => {
@@ -8,17 +9,17 @@ const formatDate = (date: string) => {
 
 type MovieCardProps = {
   movie: Movie;
-  onClick: () => void;
+  onSelect: (movie: Movie) => void;
 };
 
-export const MovieCard = ({ movie, onClick }: MovieCardProps) => {
+const MovieCardComponent = ({ movie, onSelect }: MovieCardProps) => {
   const posterUrl = movie.poster_path
     ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
     : null;
 
   return (
     <div
-      onClick={onClick}
+      onClick={() => onSelect(movie)}
       className="cursor-pointer overflow-hidden rounded-lg bg-white shadow-sm transition-transform hover:-translate-y-1"
     >
       <div className="relative aspect-2/3 bg-neutral-200">
@@ -52,3 +53,7 @@ export const MovieCard = ({ movie, onClick }: MovieCardProps) => {
     </div>
   );
 };
+
+// title 입력 등으로 부모(SearchPage)가 리렌더돼도,
+// movie/onSelect가 그대로면 카드는 리렌더하지 않도록 memo 적용
+export const MovieCard = memo(MovieCardComponent);
