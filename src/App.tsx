@@ -1,5 +1,5 @@
-import { CartPage } from './pages/CartPage';
+import { SearchPage } from './pages/SearchPage';
 
 export default function App() {
-  return <CartPage />;
+  return <SearchPage />;
 }
