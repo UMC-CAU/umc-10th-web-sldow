@@ -6,13 +6,21 @@ const formatDate = (date: string) => {
   return `${year}년 ${Number(month)}월 ${Number(day)}일`;
 };
 
-export const MovieCard = ({ movie }: { movie: Movie }) => {
+type MovieCardProps = {
+  movie: Movie;
+  onClick: () => void;
+};
+
+export const MovieCard = ({ movie, onClick }: MovieCardProps) => {
   const posterUrl = movie.poster_path
     ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
     : null;
 
   return (
-    <div className="overflow-hidden rounded-lg bg-white shadow-sm transition-transform hover:-translate-y-1">
+    <div
+      onClick={onClick}
+      className="cursor-pointer overflow-hidden rounded-lg bg-white shadow-sm transition-transform hover:-translate-y-1"
+    >
       <div className="relative aspect-2/3 bg-neutral-200">
         {posterUrl ? (
           <img

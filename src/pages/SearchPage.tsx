@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { useSearchMovies } from '../hooks/useSearchMovies';
 import { MovieCard } from '../components/MovieCard';
-import type { Language, SearchParams } from '../types/movie';
+import { MovieModal } from '../components/MovieModal';
+import type { Language, Movie, SearchParams } from '../types/movie';
 
 const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
   { value: 'ko-KR', label: '한국어' },
@@ -14,6 +15,7 @@ export const SearchPage = () => {
   const [includeAdult, setIncludeAdult] = useState(false);
   const [language, setLanguage] = useState<Language>('ko-KR');
   const [searchParams, setSearchParams] = useState<SearchParams | null>(null);
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
   const { data, isFetching, isError } = useSearchMovies(searchParams);
 
@@ -110,11 +112,22 @@ export const SearchPage = () => {
         {!isFetching && movies.length > 0 && (
           <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
             {movies.map((movie) => (
-              <MovieCard key={movie.id} movie={movie} />
+              <MovieCard
+                key={movie.id}
+                movie={movie}
+                onClick={() => setSelectedMovie(movie)}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {selectedMovie && (
+        <MovieModal
+          movie={selectedMovie}
+          onClose={() => setSelectedMovie(null)}
+        />
+      )}
     </div>
   );
 };
