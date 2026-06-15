@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="page">
+        <header class="header">
+            <h1 class="header__title">UMC Study Plan</h1>
+        </header>
+        <main class="content">
+            <div class="task-board">
+                <input type="text" class="task-board__input" placeholder="스터디 계획을 작성해보세요!" />
+                <div class="task-board__list">
+                    <section class="todo-list">
+                        <h2 class="todo-list__title">해야 할 일</h2>
+                        <ul class="todo-list__ul" id="todo-list">
+                        </ul>
+                    </section>
+                    <section class="todo-list">
+                        <h2 class="todo-list__title">해낸 일</h2>
+                        <ul class="todo-list__ul" id="done-list">
+                        </ul>
+                    </section>
+                </div>
+            </div>
+        </main>
+        <footer class="footer">made by sldow</footer>
+    </div>
+    <script type="module">
+        import { setupInput } from "./Input/input.js";
+        import { TodoList } from "./list/list.js";
+
+        const inputElement = document.querySelector(".task-board__input");
+        const myTodoList = new TodoList();
+
+        setupInput(inputElement, (text) => {
+            myTodoList.addListItem(text);
+            myTodoList.renderList();
+        });
+    </script>
+</body>
+
+</html>
